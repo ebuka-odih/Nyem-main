@@ -43,9 +43,9 @@ export const SignUpOtpScreen: React.FC<SignUpOtpScreenProps> = ({ phoneNumber, o
   }, []);
 
   return (
-    <div className="flex flex-col h-full bg-brand relative overflow-hidden">
+    <div className="flex flex-col min-h-full bg-brand relative">
         {/* Top Section: Header */}
-        <div className="px-6 pt-10 pb-8">
+        <div className="px-6 pt-8 pb-8 md:pt-10 md:pb-8 shrink-0">
             <button 
                 onClick={onBack} 
                 className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white backdrop-blur-sm hover:bg-white/30 transition-colors"
@@ -53,23 +53,23 @@ export const SignUpOtpScreen: React.FC<SignUpOtpScreenProps> = ({ phoneNumber, o
             >
                 <ArrowLeft size={22} strokeWidth={2.5} />
             </button>
-            <div className="mt-8 mb-4">
-                <h1 className="text-4xl font-extrabold text-white leading-tight tracking-wide">
+            <div className="mt-6 md:mt-8 mb-4 text-center">
+                <h1 className="text-3xl md:text-4xl font-extrabold text-white leading-tight tracking-wide">
                     Enter<br/>verification code
                 </h1>
             </div>
         </div>
 
         {/* Bottom Section: Form Card */}
-        <div className="flex-1 bg-white w-full rounded-t-[36px] px-8 pt-12 pb-6 flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.2)] animate-in slide-in-from-bottom duration-500">
+        <div className="flex-1 bg-white w-full rounded-t-[36px] px-6 md:px-8 pt-10 md:pt-12 pb-6 flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.2)] animate-in slide-in-from-bottom duration-500">
             
             <form onSubmit={handleSubmit} className="flex flex-col flex-1">
-                <p className="text-gray-500 font-medium mb-8 text-center px-4">
+                <p className="text-gray-500 font-medium mb-8 text-center px-4 text-sm md:text-base">
                     We sent a code to <span className="text-gray-700 font-semibold">+234{phoneNumber}</span>
                 </p>
 
-                {/* OTP Inputs */}
-                <div className="flex justify-between gap-2 mb-10">
+                {/* OTP Inputs - Flex container ensures they fit on small screens */}
+                <div className="flex justify-between gap-1 md:gap-2 mb-10 px-1">
                     {otp.map((data, index) => (
                         <input
                             key={index}
@@ -79,7 +79,8 @@ export const SignUpOtpScreen: React.FC<SignUpOtpScreenProps> = ({ phoneNumber, o
                             value={data}
                             onChange={(e) => handleChange(e.target, index)}
                             onKeyDown={(e) => handleKeyDown(e, index)}
-                            className="w-12 h-14 border border-gray-300 rounded-lg text-center text-2xl font-bold text-gray-800 focus:border-brand focus:ring-1 focus:ring-brand focus:outline-none transition-all bg-gray-50"
+                            className="flex-1 min-w-0 h-12 md:h-14 max-w-[50px] border border-gray-300 rounded-lg text-center text-xl md:text-2xl font-bold text-gray-800 focus:border-brand focus:ring-1 focus:ring-brand focus:outline-none transition-all bg-gray-50 p-0"
+                            inputMode="numeric"
                         />
                     ))}
                 </div>
