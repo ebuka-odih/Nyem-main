@@ -1,7 +1,7 @@
 
 
 import React, { useState, useEffect } from 'react';
-import { X, Heart, MapPin, Filter, Info, Check, RefreshCw, ChevronRight, ArrowRightLeft, Plus, Flame } from 'lucide-react';
+import { X, Heart, MapPin, Filter, Info, Check, RefreshCw, ChevronRight, ArrowRightLeft, Plus, Flame, MessageCircle } from 'lucide-react';
 import { motion, useMotionValue, useTransform, useAnimation, PanInfo, AnimatePresence } from 'framer-motion';
 
 interface SwipeScreenProps {
@@ -65,6 +65,7 @@ export const SwipeScreen: React.FC<SwipeScreenProps> = ({ onBack }) => {
   const [items, setItems] = useState<SwipeItem[]>(MOCK_BARTER_ITEMS);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showOfferModal, setShowOfferModal] = useState(false);
+  const [showMarketplaceModal, setShowMarketplaceModal] = useState(false);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
@@ -93,7 +94,9 @@ export const SwipeScreen: React.FC<SwipeScreenProps> = ({ onBack }) => {
           setShowOfferModal(true);
           controls.start({ x: 0, rotate: 0 });
       } else {
-           await swipe('right', true);
+          // Marketplace Logic: Open modal instead of swiping immediately
+          setShowMarketplaceModal(true);
+          controls.start({ x: 0, rotate: 0 });
       }
     } else if (info.offset.x < -100) {
       await swipe('left');
@@ -103,10 +106,17 @@ export const SwipeScreen: React.FC<SwipeScreenProps> = ({ onBack }) => {
   };
 
   const swipe = async (direction: 'left' | 'right', skipModal = false) => {
-    if (direction === 'right' && activeTab === 'exchange' && !skipModal) {
-      setShowOfferModal(true);
-      return;
+    // If swiping right and not skipping modal check
+    if (direction === 'right' && !skipModal) {
+        if (activeTab === 'exchange') {
+            setShowOfferModal(true);
+            return;
+        } else {
+            setShowMarketplaceModal(true);
+            return;
+        }
     }
+    
     await controls.start({ x: direction === 'left' ? -500 : 500, opacity: 0 });
     setCurrentIndex(prev => prev + 1);
     x.set(0);
@@ -114,9 +124,16 @@ export const SwipeScreen: React.FC<SwipeScreenProps> = ({ onBack }) => {
   };
 
   const resetStack = () => setCurrentIndex(0);
+  
   const handleOfferSelection = () => {
     setShowOfferModal(false);
     swipe('right', true);
+  };
+
+  const handleMarketplaceAction = (action: 'chat' | 'swipe') => {
+      setShowMarketplaceModal(false);
+      // In a real app, 'chat' would navigate to chat screen
+      swipe('right', true);
   };
   
   const handleCategorySelect = (category: string) => {
@@ -208,6 +225,7 @@ export const SwipeScreen: React.FC<SwipeScreenProps> = ({ onBack }) => {
       </div>
 
       <AnimatePresence>
+        {/* OFFER MODAL (EXCHANGE) */}
         {showOfferModal && (
             <>
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowOfferModal(false)} className="absolute inset-0 bg-black/40 z-50 backdrop-blur-sm" />
@@ -236,6 +254,38 @@ export const SwipeScreen: React.FC<SwipeScreenProps> = ({ onBack }) => {
                             </button>
                         ))}
                          <button className="w-full border-2 border-dashed border-gray-200 rounded-2xl p-4 flex items-center justify-center text-gray-400 font-bold hover:border-brand hover:text-brand hover:bg-brand/5 transition-colors"><Plus size={20} className="mr-2" />Add New Item</button>
+                    </div>
+                </motion.div>
+            </>
+        )}
+
+        {/* MARKETPLACE MODAL */}
+        {showMarketplaceModal && (
+            <>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowMarketplaceModal(false)} className="absolute inset-0 bg-black/40 z-50 backdrop-blur-sm" />
+                <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 300 }} className="absolute bottom-0 left-0 right-0 bg-white z-50 rounded-t-[32px] overflow-hidden flex flex-col p-6 shadow-2xl">
+                    <div className="flex justify-center mb-6">
+                        <div className="w-12 h-1.5 bg-gray-200 rounded-full"></div>
+                    </div>
+                    
+                    <div className="text-center mb-6">
+                        <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-lg">
+                            <Heart size={36} className="text-green-500 fill-green-500" />
+                        </div>
+                        <h2 className="text-2xl font-extrabold text-gray-900 mb-2">You liked this!</h2>
+                        <p className="text-gray-500 text-sm max-w-[280px] mx-auto">
+                            Start a chat with <span className="font-bold text-gray-900">{currentItem?.owner.name}</span> to buy <span className="font-bold text-gray-900">{currentItem?.title}</span> for <span className="text-green-600 font-bold">₦{(currentItem as MarketplaceItem).price}</span>.
+                        </p>
+                    </div>
+
+                    <div className="space-y-3 mb-6">
+                        <button onClick={() => handleMarketplaceAction('chat')} className="w-full bg-brand text-white py-4 rounded-xl font-bold shadow-lg shadow-brand/20 active:scale-95 transition-transform flex items-center justify-center space-x-2">
+                            <MessageCircle size={20} />
+                            <span>Chat with Seller</span>
+                        </button>
+                        <button onClick={() => handleMarketplaceAction('swipe')} className="w-full bg-white text-gray-500 py-4 rounded-xl font-bold border border-gray-200 hover:bg-gray-50 active:scale-95 transition-all">
+                            Keep Swiping
+                        </button>
                     </div>
                 </motion.div>
             </>
