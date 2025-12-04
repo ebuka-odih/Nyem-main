@@ -1,14 +1,10 @@
 
-
 import React, { useState, useEffect } from 'react';
-import { X, Heart, MapPin, Filter, Info, Check, RefreshCw, ChevronRight, ArrowRightLeft, Plus, Flame, MessageCircle } from 'lucide-react';
+import { X, Heart, MapPin, Filter, Info, Check, RefreshCw, Flame } from 'lucide-react';
 import { motion, useMotionValue, useTransform, useAnimation, PanInfo, AnimatePresence } from 'framer-motion';
+import { Button } from './Button';
+import { SwipeItem } from '../types';
 
-interface SwipeScreenProps {
-  onBack: () => void;
-}
-
-// FIX: Define explicit types for barter and marketplace items to create a union type.
 interface Owner {
     name: string;
     image: string;
@@ -25,6 +21,7 @@ interface BarterItem {
     description: string;
     lookingFor: string;
     owner: Owner;
+    gallery?: string[];
 }
 
 interface MarketplaceItem {
@@ -35,37 +32,43 @@ interface MarketplaceItem {
     image: string;
     description: string;
     owner: Owner;
+    gallery?: string[];
 }
 
-type SwipeItem = BarterItem | MarketplaceItem;
-
-
-// MOCK DATA
 const MOCK_BARTER_ITEMS: BarterItem[] = [
-  { id: 1, type: 'barter', title: "Vintage Camera", condition: "Antique", image: "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&q=80&w=800", description: "Fully functional film camera from the 80s.", lookingFor: "Smart Watch ⌚", owner: { name: "David", image: "https://i.pravatar.cc/150?img=3", location: "Abuja", distance: "5km" } },
-  { id: 2, type: 'barter', title: "Sony Headphones", condition: "Used", image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=800", description: "Premium noise cancelling headphones. Battery life is great.", lookingFor: "Mechanical Keyboard ⌨️", owner: { name: "Sarah", image: "https://i.pravatar.cc/150?img=5", location: "Lagos", distance: "2km" } },
+  { id: 1, type: 'barter', title: "Vintage Camera", condition: "Antique", image: "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&q=80&w=800", description: "Fully functional film camera from the 80s. Comes with original leather case.", lookingFor: "Smart Watch ⌚", owner: { name: "David", image: "https://i.pravatar.cc/150?img=3", location: "Abuja", distance: "5km" }, gallery: ["https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f", "https://images.unsplash.com/photo-1516035069371-29a1b244cc32"] },
+  { id: 2, type: 'barter', title: "Sony Headphones", condition: "Used", image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=800", description: "Premium noise cancelling headphones. Battery life is great. Minor scratches on ear cup.", lookingFor: "Mechanical Keyboard ⌨️", owner: { name: "Sarah", image: "https://i.pravatar.cc/150?img=5", location: "Lagos", distance: "2km" }, gallery: ["https://images.unsplash.com/photo-1505740420928-5e560c06d30e", "https://images.unsplash.com/photo-1546435770-a3e426bf472b"] },
 ];
+
 const MOCK_MARKETPLACE_ITEMS: MarketplaceItem[] = [
-  { id: 3, type: 'marketplace', title: "Phone holder", price: "15,000", image: "https://images.unsplash.com/photo-1585771724684-38269d6639fd?auto=format&fit=crop&q=80&w=800", description: "Phone holder against flat wall or surface area.", owner: { name: "Ebuka", image: "https://i.pravatar.cc/150?img=11", location: "Abuja", distance: "30m" } },
-  { id: 4, type: 'marketplace', title: "Macbook Stand", price: "25,000", image: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&q=80&w=800", description: "Aluminum alloy laptop stand. Ergonomic design.", owner: { name: "Miriam", image: "https://i.pravatar.cc/150?img=9", location: "Port Harcourt", distance: "12km" } }
+  { id: 3, type: 'marketplace', title: "Phone holder", price: "15,000", image: "https://images.unsplash.com/photo-1585771724684-38269d6639fd?auto=format&fit=crop&q=80&w=800", description: "Phone holder against flat wall or surface area. Great for hands-free video calls or watching movies in bed.", owner: { name: "Ebuka", image: "https://i.pravatar.cc/150?img=11", location: "Abuja", distance: "30m" }, gallery: ["https://images.unsplash.com/photo-1585771724684-38269d6639fd"] },
+  { id: 4, type: 'marketplace', title: "Macbook Stand", price: "25,000", image: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&q=80&w=800", description: "Aluminum alloy laptop stand. Ergonomic design to improve posture.", owner: { name: "Miriam", image: "https://i.pravatar.cc/150?img=9", location: "Port Harcourt", distance: "12km" }, gallery: ["https://images.unsplash.com/photo-1527443224154-c4a3942d3acf"] }
 ];
 
 const MOCK_USER_ITEMS = [
-    { id: 101, title: "AirPod Pro", subtitle: "AirPod pro 2", badge: "Used", category: "Electronics", image: "https://images.unsplash.com/photo-1603351154351-5cf233081e35?auto=format&fit=crop&w=150&q=80" },
-    { id: 102, title: "Camera", subtitle: "Canon DSLR camera...", badge: "Used", category: "Electronics", image: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=150&q=80" },
+    { id: 101, title: "AirPod Pro", subtitle: "Used • Electronics", image: "https://images.unsplash.com/photo-1603351154351-5cf233081e35?auto=format&fit=crop&w=300&q=80" },
+    { id: 102, title: "Camera", subtitle: "Used • Electronics", image: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=300&q=80" },
+    { id: 103, title: "Shoes", subtitle: "Used • Fashion", image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=300&q=80" },
 ];
 
 const CATEGORY_OPTIONS = ["All Categories", "Electronics", "Fashion", "Home", "Books"];
 const LOCATION_OPTIONS = ["Abuja", "Lagos", "Port Harcourt", "London"];
 
+interface SwipeScreenProps {
+  onBack: () => void;
+  onItemClick: (item: SwipeItem) => void;
+}
 
-export const SwipeScreen: React.FC<SwipeScreenProps> = ({ onBack }) => {
+export const SwipeScreen: React.FC<SwipeScreenProps> = ({ onBack, onItemClick }) => {
   const [activeTab, setActiveTab] = useState<'exchange' | 'marketplace'>('exchange');
-  // FIX: Explicitly type the state with the union type to allow both barter and marketplace items.
   const [items, setItems] = useState<SwipeItem[]>(MOCK_BARTER_ITEMS);
   const [currentIndex, setCurrentIndex] = useState(0);
+  
+  // Modal States
   const [showOfferModal, setShowOfferModal] = useState(false);
   const [showMarketplaceModal, setShowMarketplaceModal] = useState(false);
+  
+  // Dropdowns
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
@@ -77,7 +80,7 @@ export const SwipeScreen: React.FC<SwipeScreenProps> = ({ onBack }) => {
     } else {
       setItems(MOCK_MARKETPLACE_ITEMS);
     }
-    setCurrentIndex(0); // Reset index when tab changes
+    setCurrentIndex(0); 
   }, [activeTab]);
   
   const x = useMotionValue(0);
@@ -85,19 +88,35 @@ export const SwipeScreen: React.FC<SwipeScreenProps> = ({ onBack }) => {
   const opacity = useTransform(x, [-200, -150, 0, 150, 200], [0.5, 1, 1, 1, 0.5]); 
   const controls = useAnimation();
 
+  useEffect(() => {
+    controls.set({ scale: 0.9, y: 20, opacity: 0 });
+    controls.start({ scale: 1, y: 0, opacity: 1, transition: { type: 'spring', stiffness: 260, damping: 20 } });
+  }, [currentIndex, activeTab, controls]);
+
   const currentItem = items[currentIndex];
   const nextItem = items[currentIndex + 1];
 
+  // INTERCEPTOR: Handle Right Swipe to show modals
+  const handleRightSwipe = () => {
+    // Reset the card position so it stays visible behind the modal
+    controls.start({ x: 0, opacity: 1, rotate: 0 });
+
+    if (activeTab === 'exchange') {
+      setShowOfferModal(true);
+    } else {
+      setShowMarketplaceModal(true);
+    }
+  };
+
+  const completeRightSwipe = async () => {
+    setShowOfferModal(false);
+    setShowMarketplaceModal(false);
+    await swipe('right');
+  };
+
   const handleDragEnd = async (event: any, info: PanInfo) => {
     if (info.offset.x > 100) {
-      if (activeTab === 'exchange') {
-          setShowOfferModal(true);
-          controls.start({ x: 0, rotate: 0 });
-      } else {
-          // Marketplace Logic: Open modal instead of swiping immediately
-          setShowMarketplaceModal(true);
-          controls.start({ x: 0, rotate: 0 });
-      }
+      handleRightSwipe(); // <--- CALL INTERCEPTOR
     } else if (info.offset.x < -100) {
       await swipe('left');
     } else {
@@ -105,36 +124,13 @@ export const SwipeScreen: React.FC<SwipeScreenProps> = ({ onBack }) => {
     }
   };
 
-  const swipe = async (direction: 'left' | 'right', skipModal = false) => {
-    // If swiping right and not skipping modal check
-    if (direction === 'right' && !skipModal) {
-        if (activeTab === 'exchange') {
-            setShowOfferModal(true);
-            return;
-        } else {
-            setShowMarketplaceModal(true);
-            return;
-        }
-    }
-    
+  const swipe = async (direction: 'left' | 'right') => {
     await controls.start({ x: direction === 'left' ? -500 : 500, opacity: 0 });
     setCurrentIndex(prev => prev + 1);
     x.set(0);
-    controls.set({ x: 0, opacity: 1 });
   };
 
   const resetStack = () => setCurrentIndex(0);
-  
-  const handleOfferSelection = () => {
-    setShowOfferModal(false);
-    swipe('right', true);
-  };
-
-  const handleMarketplaceAction = (action: 'chat' | 'swipe') => {
-      setShowMarketplaceModal(false);
-      // In a real app, 'chat' would navigate to chat screen
-      swipe('right', true);
-  };
   
   const handleCategorySelect = (category: string) => {
       setSelectedCategory(category);
@@ -148,6 +144,7 @@ export const SwipeScreen: React.FC<SwipeScreenProps> = ({ onBack }) => {
   return (
     <div className="flex flex-col h-full bg-white relative">
       
+      {/* HEADER & FILTERS */}
       <div className="px-6 pt-4 pb-1 bg-white z-20 shrink-0">
         <div className="flex justify-center items-center mb-2">
              <h1 className="text-lg font-extrabold text-gray-900 tracking-wide">Discover</h1>
@@ -201,6 +198,7 @@ export const SwipeScreen: React.FC<SwipeScreenProps> = ({ onBack }) => {
         </div>
       </div>
 
+      {/* CARD STACK */}
       <div className="flex-1 relative flex flex-col items-center pt-1 px-4 overflow-hidden w-full">
         <div className="relative w-full h-[65vh] md:h-[68vh]">
             {!currentItem && (
@@ -211,92 +209,114 @@ export const SwipeScreen: React.FC<SwipeScreenProps> = ({ onBack }) => {
                     <button onClick={resetStack} className="flex items-center space-x-2 px-6 py-3 bg-brand text-white rounded-full font-bold shadow-lg active:scale-95 transition-transform"><RefreshCw size={20} /><span>Start Over</span></button>
                 </div>
             )}
-            {nextItem && (<div className="absolute inset-0 w-full h-full bg-white rounded-[28px] border border-gray-100 shadow-sm overflow-hidden flex flex-col scale-[0.96] translate-y-3 opacity-60 z-0 pointer-events-none"><CardContent item={nextItem} /></div>)}
+            
+            {nextItem && (
+                <div className="absolute inset-0 w-full h-full bg-white rounded-[28px] border border-gray-100 shadow-sm overflow-hidden flex flex-col scale-[0.96] translate-y-3 opacity-60 z-0 pointer-events-none">
+                    <CardContent item={nextItem} />
+                </div>
+            )}
+            
             {currentItem && (
-                <motion.div key={currentItem.id} className="absolute inset-0 w-full h-full bg-white rounded-[28px] shadow-[0_4px_24px_rgba(0,0,0,0.08)] z-10 overflow-hidden border border-gray-100 flex flex-col cursor-grab active:cursor-grabbing origin-bottom" style={{ x, rotate, opacity }} animate={controls} drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.7} onDragEnd={handleDragEnd} whileTap={{ scale: 1.005 }}>
-                    <CardContent item={currentItem} />
+                <motion.div 
+                    key={currentItem.id} 
+                    className="absolute inset-0 w-full h-full bg-white rounded-[28px] shadow-[0_4px_24px_rgba(0,0,0,0.08)] z-10 overflow-hidden border border-gray-100 flex flex-col cursor-grab active:cursor-grabbing origin-bottom" 
+                    style={{ x, rotate, opacity }} 
+                    animate={controls} 
+                    drag="x" 
+                    dragConstraints={{ left: 0, right: 0 }} 
+                    dragElastic={0.7} 
+                    onDragEnd={handleDragEnd} 
+                    whileTap={{ scale: 1.005 }}
+                >
+                    <CardContent 
+                        item={currentItem} 
+                        onInfoClick={() => onItemClick(currentItem)} 
+                    />
                 </motion.div>
             )}
         </div>
+        
+        {/* SWIPE BUTTONS */}
         <div className="absolute bottom-2 flex justify-center space-x-8 z-30 w-full pointer-events-none">
              <button onClick={() => currentItem && swipe('left')} disabled={!currentItem} className="pointer-events-auto w-14 h-14 rounded-full bg-white border border-red-100 shadow-[0_8px_20px_rgba(239,68,68,0.15)] flex items-center justify-center text-red-500 active:scale-95 transition-transform hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:scale-100"><X size={28} strokeWidth={2.5} /></button>
-             <button onClick={() => currentItem && swipe('right')} disabled={!currentItem} className="pointer-events-auto w-14 h-14 rounded-full bg-white border border-green-100 shadow-[0_8px_20px_rgba(34,197,94,0.15)] flex items-center justify-center text-green-500 active:scale-95 transition-transform hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:scale-100"><Check size={28} strokeWidth={3} /></button>
+             <button onClick={() => currentItem && handleRightSwipe()} disabled={!currentItem} className="pointer-events-auto w-14 h-14 rounded-full bg-white border border-green-100 shadow-[0_8px_20px_rgba(34,197,94,0.15)] flex items-center justify-center text-green-500 active:scale-95 transition-transform hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:scale-100"><Check size={28} strokeWidth={3} /></button>
         </div>
       </div>
 
+      {/* MODALS OVERLAY */}
       <AnimatePresence>
-        {/* OFFER MODAL (EXCHANGE) */}
+        {/* BARTER OFFER MODAL */}
         {showOfferModal && (
-            <>
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowOfferModal(false)} className="absolute inset-0 bg-black/40 z-50 backdrop-blur-sm" />
-                <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 300 }} className="absolute bottom-0 left-0 right-0 bg-white z-50 rounded-t-[32px] overflow-hidden flex flex-col h-[75%] shadow-2xl">
-                    <div className="p-6 pb-2 shrink-0">
-                         <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-xl font-extrabold text-gray-900">Select Item to Offer</h2>
-                            <button onClick={() => setShowOfferModal(false)} className="p-2 hover:bg-gray-100 rounded-full"><X size={20} className="text-gray-500" /></button>
-                         </div>
-                         <div className="bg-brand/5 border-l-4 border-brand p-4 rounded-r-xl mb-4">
-                             <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">You want:</p>
-                             <p className="text-lg font-bold text-gray-900">{currentItem?.title}</p>
-                         </div>
-                         <p className="text-gray-500 text-sm font-medium ml-1">Which item do you want to offer in exchange?</p>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end justify-center">
+                <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 200 }} className="bg-white w-full rounded-t-3xl overflow-hidden max-h-[85vh] flex flex-col shadow-2xl">
+                    <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-10">
+                        <div>
+                            <h3 className="font-extrabold text-xl text-gray-900">Make an Offer</h3>
+                            <p className="text-sm text-gray-500">Select an item to exchange</p>
+                        </div>
+                        <button 
+                            onClick={() => setShowOfferModal(false)} 
+                            className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-full hover:bg-gray-200 transition-colors text-gray-600"
+                        >
+                            <X size={24} />
+                        </button>
                     </div>
-                    <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-3">
-                        {MOCK_USER_ITEMS.map((item) => (
-                            <button key={item.id} onClick={handleOfferSelection} className="w-full bg-white border border-gray-100 rounded-2xl p-3 flex items-center shadow-sm hover:shadow-md hover:border-brand/30 active:scale-[0.98] transition-all group">
-                                <div className="w-16 h-16 bg-gray-100 rounded-xl overflow-hidden shrink-0 mr-4"><img src={item.image} alt={item.title} className="w-full h-full object-cover" /></div>
-                                <div className="flex-1 text-left">
-                                    <h3 className="font-bold text-gray-900 text-base">{item.title}</h3>
-                                    <p className="text-xs text-gray-500 mb-1">{item.subtitle}</p>
-                                    <div className="flex items-center space-x-2"><span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full">{item.badge}</span><span className="text-[10px] text-gray-400">{item.category}</span></div>
-                                </div>
-                                <ChevronRight className="text-gray-300 group-hover:text-brand" size={20} />
-                            </button>
-                        ))}
-                         <button className="w-full border-2 border-dashed border-gray-200 rounded-2xl p-4 flex items-center justify-center text-gray-400 font-bold hover:border-brand hover:text-brand hover:bg-brand/5 transition-colors"><Plus size={20} className="mr-2" />Add New Item</button>
+
+                    {/* TARGET ITEM CONTEXT - Added as requested */}
+                    {currentItem && (
+                        <div className="px-5 py-4 bg-gray-50 border-b border-gray-100">
+                             <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
+                                 You Want to Exchange For:
+                             </div>
+                             <div className="flex items-center bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+                                 <div className="w-12 h-12 rounded-lg bg-gray-200 overflow-hidden shrink-0">
+                                     <img src={currentItem.image} alt={currentItem.title} className="w-full h-full object-cover" />
+                                 </div>
+                                 <div className="ml-3 flex-1 min-w-0">
+                                     <h4 className="font-bold text-gray-900 text-sm truncate">{currentItem.title}</h4>
+                                     <p className="text-xs text-gray-500 truncate">Owned by {currentItem.owner.name}</p>
+                                 </div>
+                             </div>
+                        </div>
+                    )}
+
+                    <div className="overflow-y-auto p-4 space-y-3 pb-8">
+                         {MOCK_USER_ITEMS.map(item => (
+                             <button key={item.id} onClick={completeRightSwipe} className="w-full flex items-center p-3 rounded-2xl border border-gray-100 hover:border-brand hover:bg-brand/5 transition-all group text-left">
+                                 <div className="w-16 h-16 rounded-xl bg-gray-200 overflow-hidden shrink-0"><img src={item.image} className="w-full h-full object-cover" /></div>
+                                 <div className="ml-4 flex-1">
+                                     <h4 className="font-bold text-gray-900 group-hover:text-brand transition-colors">{item.title}</h4>
+                                     <p className="text-xs text-gray-500 mt-0.5">{item.subtitle}</p>
+                                 </div>
+                                 <div className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center group-hover:bg-brand group-hover:border-brand group-hover:text-white transition-all"><Check size={16} /></div>
+                             </button>
+                         ))}
                     </div>
                 </motion.div>
-            </>
+            </motion.div>
         )}
 
-        {/* MARKETPLACE MODAL */}
+        {/* MARKETPLACE INTERACTION MODAL */}
         {showMarketplaceModal && (
-            <>
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowMarketplaceModal(false)} className="absolute inset-0 bg-black/40 z-50 backdrop-blur-sm" />
-                <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 300 }} className="absolute bottom-0 left-0 right-0 bg-white z-50 rounded-t-[32px] overflow-hidden flex flex-col p-6 shadow-2xl">
-                    <div className="flex justify-center mb-6">
-                        <div className="w-12 h-1.5 bg-gray-200 rounded-full"></div>
-                    </div>
-                    
-                    <div className="text-center mb-6">
-                        <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-lg">
-                            <Heart size={36} className="text-green-500 fill-green-500" />
-                        </div>
-                        <h2 className="text-2xl font-extrabold text-gray-900 mb-2">You liked this!</h2>
-                        <p className="text-gray-500 text-sm max-w-[280px] mx-auto">
-                            Start a chat with <span className="font-bold text-gray-900">{currentItem?.owner.name}</span> to buy <span className="font-bold text-gray-900">{currentItem?.title}</span> for <span className="text-green-600 font-bold">₦{(currentItem as MarketplaceItem).price}</span>.
-                        </p>
-                    </div>
-
-                    <div className="space-y-3 mb-6">
-                        <button onClick={() => handleMarketplaceAction('chat')} className="w-full bg-brand text-white py-4 rounded-xl font-bold shadow-lg shadow-brand/20 active:scale-95 transition-transform flex items-center justify-center space-x-2">
-                            <MessageCircle size={20} />
-                            <span>Chat with Seller</span>
-                        </button>
-                        <button onClick={() => handleMarketplaceAction('swipe')} className="w-full bg-white text-gray-500 py-4 rounded-xl font-bold border border-gray-200 hover:bg-gray-50 active:scale-95 transition-all">
-                            Keep Swiping
-                        </button>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6">
+                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center">
+                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-green-600"><Check size={32} strokeWidth={3} /></div>
+                    <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Interested?</h2>
+                    <p className="text-gray-500 mb-8 leading-relaxed">You liked <strong>{currentItem?.title}</strong>. What would you like to do next?</p>
+                    <div className="space-y-3">
+                        <Button fullWidth onClick={completeRightSwipe}>Chat with Seller</Button>
+                        <button onClick={completeRightSwipe} className="w-full py-3.5 rounded-full font-bold text-gray-500 hover:bg-gray-50 transition-colors">Keep Swiping</button>
                     </div>
                 </motion.div>
-            </>
+            </motion.div>
         )}
       </AnimatePresence>
     </div>
   );
 };
 
-// FIX: Type the 'item' prop with the SwipeItem union type.
-const CardContent: React.FC<{ item: SwipeItem }> = ({ item }) => {
+// Internal Component for Card Content
+const CardContent: React.FC<{ item: SwipeItem; onInfoClick?: () => void }> = ({ item, onInfoClick }) => {
     const isMarketplace = item.type === 'marketplace';
     
     return (
@@ -304,37 +324,55 @@ const CardContent: React.FC<{ item: SwipeItem }> = ({ item }) => {
             <div className="h-[60%] bg-gray-100 relative shrink-0">
                 <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-                <button className="absolute top-4 right-4 bg-white/20 backdrop-blur-md text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg active:scale-90 border border-white/30"><Info size={18} /></button>
+                
+                {/* INFO BUTTON */}
+                <button 
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onInfoClick && onInfoClick();
+                    }}
+                    className="absolute top-4 right-4 bg-white/20 backdrop-blur-md text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg active:scale-90 border border-white/30 z-20 cursor-pointer hover:bg-white/30"
+                >
+                    <Info size={18} />
+                </button>
+
                 <div className="absolute bottom-3 left-4 right-4">
-                    <div className="flex items-start justify-between">
-                         <h2 className="text-2xl font-extrabold text-white leading-tight drop-shadow-md pr-2 line-clamp-2">{item.title}</h2>
+                     <div className="flex flex-col items-start gap-1">
                          {isMarketplace ? (
-                            <span className="bg-yellow-400 text-black border border-yellow-300/50 text-xs font-bold px-3 py-1.5 rounded-full shadow-sm ml-2 mt-1 whitespace-nowrap shrink-0">₦{item.price}</span>
+                            <span className="bg-yellow-400 text-black border border-yellow-300/50 text-xs font-bold px-3 py-1.5 rounded-full shadow-sm mb-1 whitespace-nowrap shrink-0">₦{item.price}</span>
                          ) : (
-                            <span className="bg-green-500 text-white border border-green-400/50 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide shadow-sm ml-2 mt-1 whitespace-nowrap shrink-0">{item.condition}</span>
+                            <span className="bg-green-500 text-white border border-green-400/50 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide shadow-sm mb-1 whitespace-nowrap shrink-0">{item.condition}</span>
                          )}
+                         <h2 className="text-2xl font-extrabold text-white leading-tight drop-shadow-md pr-2 line-clamp-2">{item.title}</h2>
                     </div>
                 </div>
             </div>
             <div className="p-4 flex flex-col flex-1 bg-white relative overflow-y-auto pb-20">
                 <p className="text-gray-600 text-sm mb-3 line-clamp-2 leading-snug font-medium select-none">{item.description}</p>
+                
                 {isMarketplace ? (
                     <div className="bg-green-50 rounded-lg px-3 py-2 mb-3 flex items-center border border-green-100 select-none">
                         <span className="text-green-700 text-xs truncate font-bold">Available for Purchase</span>
                     </div>
                 ) : (
                     <div className="bg-gray-50 rounded-lg px-3 py-2 mb-3 flex items-center border border-gray-100 select-none">
-                        <ArrowRightLeft className="text-brand w-3.5 h-3.5 mr-2 shrink-0" />
                         <span className="text-gray-500 text-xs truncate">Looking for: <span className="font-bold text-gray-900 ml-1">{item.lookingFor}</span></span>
                     </div>
                 )}
+                
                 <div className="flex-grow"></div>
                 <div className="h-px bg-gray-50 w-full my-1.5"></div>
                 <div className="flex items-center pt-1.5">
                     <div className="w-9 h-9 rounded-full bg-gray-200 mr-3 overflow-hidden shrink-0 border"><img src={item.owner.image} alt={item.owner.name} className="w-full h-full object-cover" /></div>
                     <div>
                         <h3 className="font-bold text-gray-900 text-sm">{item.owner.name}</h3>
-                        <div className="flex items-center text-gray-400 text-xs font-medium mt-0.5"><MapPin size={10} className="mr-1" /><span>{item.owner.location}</span><span className="mx-1.5 text-gray-300">•</span><span className="text-brand font-bold">{item.owner.distance}</span></div>
+                        <div className="flex items-center text-gray-400 text-xs font-medium mt-0.5">
+                            <MapPin size={10} className="mr-1" />
+                            <span>{item.owner.location}</span>
+                            <span className="mx-1.5 text-gray-300">•</span>
+                            <MapPin size={10} className="mr-0.5 text-brand" />
+                            <span className="text-brand font-bold">{item.owner.distance} away</span>
+                        </div>
                     </div>
                 </div>
             </div>

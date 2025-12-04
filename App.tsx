@@ -1,5 +1,4 @@
 
-
 import React, { useState } from 'react';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { SignInScreen } from './components/SignInScreen';
@@ -13,13 +12,15 @@ import { MatchRequestsScreen } from './components/MatchRequestsScreen';
 import { ChatScreen } from './components/ChatScreen';
 import { ProfileScreen } from './components/ProfileScreen';
 import { EditProfileScreen } from './components/EditProfileScreen';
+import { ItemDetailsScreen } from './components/ItemDetailsScreen';
 import { BottomNav } from './components/BottomNav';
-import { ScreenState, TabState } from './types';
+import { ScreenState, TabState, SwipeItem } from './types';
 
 const App: React.FC = () => {
   const [currentScreen, setCurrentScreen] = useState<ScreenState>('welcome');
   const [activeTab, setActiveTab] = useState<TabState>('discover');
   const [signupPhone, setSignupPhone] = useState('');
+  const [selectedItem, setSelectedItem] = useState<SwipeItem | null>(null);
 
   const handleSendOtp = (phone: string) => {
     setSignupPhone(phone);
@@ -30,11 +31,16 @@ const App: React.FC = () => {
     setCurrentScreen('home');
     setActiveTab('profile');
   };
+  
+  const handleItemClick = (item: SwipeItem) => {
+      setSelectedItem(item);
+      setCurrentScreen('item_details');
+  };
 
   const renderMainContent = () => {
       switch (activeTab) {
           case 'discover':
-              return <SwipeScreen onBack={() => setCurrentScreen('welcome')} />;
+              return <SwipeScreen onBack={() => setCurrentScreen('welcome')} onItemClick={handleItemClick} />;
           case 'upload':
               return <UploadScreen />;
           case 'matches':
@@ -45,7 +51,7 @@ const App: React.FC = () => {
           case 'profile':
               return <ProfileScreen onEditProfile={() => setCurrentScreen('edit_profile')} />;
           default:
-              return <SwipeScreen onBack={() => setCurrentScreen('welcome')} />;
+              return <SwipeScreen onBack={() => setCurrentScreen('welcome')} onItemClick={handleItemClick} />;
       }
   };
 
@@ -100,6 +106,10 @@ const App: React.FC = () => {
 
         {currentScreen === 'edit_profile' && (
             <EditProfileScreen onBack={handleBackToProfile} />
+        )}
+        
+        {currentScreen === 'item_details' && (
+            <ItemDetailsScreen item={selectedItem} onBack={() => setCurrentScreen('home')} />
         )}
 
         {currentScreen === 'home' && (
